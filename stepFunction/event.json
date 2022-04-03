@@ -1,0 +1,6 @@
+{
+    "callLogsJob": "call-logs-ingestion",
+    "redShiftJob": "call-logs-redshift",
+  	"bucket": "craft-project",
+    "table": "call_logs_incr"
+}

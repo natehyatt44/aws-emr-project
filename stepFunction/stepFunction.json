@@ -1,0 +1,33 @@
+{
+  "Comment": "A description of my state machine",
+  "StartAt": "Ingest Call Logs",
+  "States": {
+    "Ingest Call Logs": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::glue:startJobRun.sync",
+      "Parameters": {
+        "JobName.$": "$.callLogsJob",
+        "Arguments": {
+          "--bucket.$": "$.bucket",
+          "--table.$": "$.table"
+        }
+      },
+      "Next": "Redshift Job",
+      "ResultPath": "$",
+      "InputPath": "$"
+    },
+    "Redshift Job": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::glue:startJobRun.sync",
+      "Parameters": {
+        "JobName": "call-logs-redshift"
+      },
+      "Next": "Success",
+      "ResultPath": "$",
+      "InputPath": "$"
+    },
+    "Success": {
+      "Type": "Succeed"
+    }
+  }
+}
