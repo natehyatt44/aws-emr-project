@@ -1,0 +1,3 @@
+awswrangler==2.5.0
+boto3==1.17.36
+pandas==1.1.5
