@@ -26,20 +26,24 @@ def getTotalCalls(df):
     totalCalls.rename(columns={'contactid':'totalcalls'}, inplace=True)
     return totalCalls
 
-# Connect to postgreSQL DB
-con = wr.postgresql.connect("RDS")
+# Connect to redshift DB
+con = wr.redshift.connect("redshift")
 # Get full dataframe from database for use.
-df = wr.postgresql.read_sql_query("SELECT * from craft.call_logs", con=con)
+df = wr.redshift.read_sql_query("SELECT * FROM craft.rs_call_logs", con=con)
+
+# Can switch to use postgresSQL DB as well
+# con = wr.postgresql.connect("RDS")
+# df = wr.postgresql.read_sql_query("SELECT * FROM craft.rs_call_logs", con=con)
 
 startDate = '2019-10-15'
 endDate = '2019-10-31'
 
 # Call function for average call time and print out result
 averageCallTime = getAverageCallTime(df, startDate, endDate)
-print (f'The Average call time in seconds for the date range {startDate} - {endDate} is {averageCallTime}\n\n')
+print (f'The Average call time in seconds for the input data range is: {averageCallTime}\n\n')
 
 # PRINT OUT
-# The Average call time in seconds for the date range 2019-10-15 - 2019-10-31 is 860.3214285714286
+# The Average call time in seconds for input data range is: 860.3214285714286
 
 # Get total calls per Agent/Channel
 totalCalls = getTotalCalls(df)
@@ -77,6 +81,12 @@ print (totalCalls)
 # 3246u6tg-7huj    CHAT              3
 #                  VOICE             5
 # 2h5cfa8a-24b9    CHAT              1
+
+
+
+
+
+
 
 
 
