@@ -7,7 +7,7 @@ from awsglue.utils import getResolvedOptions
 from awsglue.job import Job
 from awsglue.dynamicframe import DynamicFrame
 from pyspark.sql.types import *
-from pyspark.sql.functions import to_json, col
+from pyspark.sql.functions import to_json,col
 import boto3
 
 glueContext = GlueContext(SparkContext.getOrCreate())
@@ -40,8 +40,8 @@ try:
             "recurse": True
         }
     )
-
-    print(f'Staging Frame Row Count: {stgFrame.count()}')
+    
+    print (f'Staging Frame Row Count: {stgFrame.count()}')
 
 except Exception as e:
     raise e
@@ -56,7 +56,7 @@ try:
     print(f"Transform/Dedup call log frame")
     stgFrame = stgFrame.toDF()
     stgFrame.createOrReplaceTempView("stgFrame")
-
+    
     # Filter out where channel is empty
     stgFrame = glueContext.sql("""
         SELECT  CAST(Contactid AS STRING) AS contactid,
@@ -72,15 +72,15 @@ try:
         FROM    stgframe 
         WHERE   channel IS NOT NULL
         AND     channel <> ''
-    """)
-
-    # Drop Duplicates on contactId (Unique ID for each call/contact)
+    """) 
+     
+    # Drop Duplicates on contactId (Unique ID for each call/contact) 
     # Include callStartTime for duplicates as well as there are instances of the same contactId with different startTimes to the call
-    stgFrame = stgFrame.dropDuplicates(["contactid", "callstarttime"])
+    stgFrame = stgFrame.dropDuplicates(["contactid", "callstarttime"]) 
     # Convert attributes to a json string so it can inserted into the postgres DB
     stgFrame = stgFrame.withColumn("attributes", to_json(col("attributes")))
-
-    print(f'Staging Frame Row Count after Dedup/Transform: {stgFrame.count()}')
+   
+    print (f'Staging Frame Row Count after Dedup/Transform: {stgFrame.count()}')
 
 except Exception as e:
     raise e
@@ -90,11 +90,11 @@ except Exception as e:
 try:
     print(f"Get frame from postgres DB")
     dbFrame = glueContext.create_dynamic_frame.from_catalog(
-        database="craftproject",
-        table_name="craftproject_craft_call_logs",
-        redshift_tmp_dir=redshiftTempDir)
-
-    print(f'DB Frame Count: {dbFrame.count()}')
+        database = "craftproject", 
+        table_name = "craftproject_craft_call_logs", 
+        redshift_tmp_dir = redshiftTempDir)
+        
+    print(f'DB Frame Count: {dbFrame.count()}') 
 except Exception as e:
     raise e
     job.commit()
@@ -104,16 +104,16 @@ try:
     print(f'Merge call log incr / db Frames')
     dbFrame = dbFrame.toDF()
     dbFrame = glueContext.createDataFrame(dbFrame.rdd, stgFrame.schema)
-
+    
     joinConditions = [dbFrame.contactid == stgFrame.contactid,
                       dbFrame.callstarttime == stgFrame.callstarttime]
-
+                      
     finalFrame = stgFrame.join(dbFrame, joinConditions, 'left') \
         .select(stgFrame["*"]) \
         .where(dbFrame.contactid.isNull())
-
+        
     print(f'Merged Frame Count: {finalFrame.count()}')
-
+    
 except Exception as e:
     raise e
     job.commit()
@@ -129,22 +129,18 @@ except Exception as e:
 try:
     if recordsLoaded > 0:
         print("Incremental load into postgres DB")
-        postgresFrame = DynamicFrame.fromDF(finalFrame, glueContext, "finalFrame")
-
+        postgresFrame =  DynamicFrame.fromDF(finalFrame, glueContext, "finalFrame")
+        
         glueContext.write_dynamic_frame.from_catalog(
-            frame=postgresFrame,
-            database="craftproject",
-            table_name="craftproject_craft_call_logs",
-            redshift_tmp_dir=redshiftTempDir)
+            frame = postgresFrame, 
+            database = "craftproject", 
+            table_name = "craftproject_craft_call_logs", 
+            redshift_tmp_dir = redshiftTempDir)
     else:
-        print(f"No records loaded")
-
-    job.commit()
-
+        print (f"No records loaded")
+        
 except Exception as e:
     raise e
     job.commit()
-
+    
 job.commit()
-
-
